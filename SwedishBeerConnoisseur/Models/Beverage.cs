@@ -13,6 +13,7 @@ namespace SwedishBeerConnoisseur.Models
         public string ProductNameThin { get; set; }
         public string Category { get; set; }
         public int ProductNumberShort { get; set; }
+        public string SupplierName { get; set; }
         public bool IsKosher { get; set; }
         public bool IsOrganic { get; set; }
         public bool IsEthical { get; set; }

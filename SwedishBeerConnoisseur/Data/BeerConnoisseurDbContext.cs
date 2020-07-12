@@ -11,5 +11,15 @@ namespace SwedishBeerConnoisseur.Data
     {
         public DbSet<Beverage> Beverages { get; set; }
         public DbSet<Store> Stores { get; set; }
+
+        public BeerConnoisseurDbContext(DbContextOptions<BeerConnoisseurDbContext> options) : base(options)
+        { 
+        
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+        }
     }
 }
