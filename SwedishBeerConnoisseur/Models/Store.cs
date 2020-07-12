@@ -7,18 +7,22 @@ namespace SwedishBeerConnoisseur.Models
 {
     public class Store
     {
+        //Internal Id reference
         public int StoreId { get; set; }
-        public int SiteId { get; set; }
-        public string Adress { get; set; }
+        public string SiteId { get; set; }
+        public string Alias { get; set; }
+        public string Address { get; set; }
+        public string DisplayName { get; set; }
         public string PostalCode { get; set; }
         public string City { get; set; }
-        public string Alias { get; set; }
+        public string County { get; set; }
+        public string Country { get; set; }
         public bool IsStore { get; set; }
-        public string PhoneNumber { get; set; }
+        public bool IsAgent { get; set; }
+        public bool IsActiveForAgentOrder { get; set; }
+        public string Phone { get; set; }
         public string Email { get; set; }
+        public string Depot { get; set; }
         public string Name { get; set; }
-        public string LongitudePosition { get; set; }
-        public string LatitudePosition { get; set; }
-        public string OpeningHoursToday { get; set; }
     }
 }

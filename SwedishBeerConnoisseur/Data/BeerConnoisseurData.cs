@@ -13,10 +13,14 @@ namespace SwedishBeerConnoisseur.Data
         {
             dbContext = beerConnoisseurDbContext;
         }
-        public bool AddBeverageToDatabase(Beverage beverage)
+        public async Task<bool> AddBeverageToDatabase(Beverage beverage)
         {
-            Beverage beverageInDatabase = dbContext.Beverages.Where(bev => bev.BeverageId == beverage.BeverageId).FirstOrDefault<Beverage>();
-            if (beverageInDatabase != null)
+            Beverage beverageInDatabase = dbContext.Beverages.Where(bev => bev.ProductNumber == beverage.ProductNumber).FirstOrDefault<Beverage>();
+            if (beverageInDatabase == null)
+            {
+                dbContext.Beverages.Add(beverage);
+            }
+            else 
             {
                 beverageInDatabase.Price = beverage.Price;
                 if (beverageInDatabase.OldHighPrice < beverage.Price)
@@ -24,15 +28,10 @@ namespace SwedishBeerConnoisseur.Data
                     beverageInDatabase.OldHighPrice = beverage.Price;
                 }
             }
-            else 
-            {
-                dbContext.Beverages.Add(beverage);
-
-            }
 
             try
             {
-                dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync();
             }
             catch
             {
@@ -41,6 +40,11 @@ namespace SwedishBeerConnoisseur.Data
 
             return true;
 
+        }
+
+        public List<Beverage> RetrieveBeveragesList()
+        {
+            return dbContext.Beverages.ToList<Beverage>();
         }
     }
 }

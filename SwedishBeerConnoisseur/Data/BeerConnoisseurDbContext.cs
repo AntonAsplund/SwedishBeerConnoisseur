@@ -11,6 +11,7 @@ namespace SwedishBeerConnoisseur.Data
     {
         public DbSet<Beverage> Beverages { get; set; }
         public DbSet<Store> Stores { get; set; }
+        public DbSet<User> Users {get; set;}
 
         public BeerConnoisseurDbContext(DbContextOptions<BeerConnoisseurDbContext> options) : base(options)
         { 

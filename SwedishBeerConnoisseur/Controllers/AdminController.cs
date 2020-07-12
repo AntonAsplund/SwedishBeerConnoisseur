@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Web;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using SwedishBeerConnoisseur.Data;
 using SwedishBeerConnoisseur.Models;
 
@@ -21,23 +22,22 @@ namespace SwedishBeerConnoisseur.Controllers
         }
         public IActionResult Index()
         {
-
-            return View();
+            return View(beerData.RetrieveBeveragesList());
         }
 
-        public IActionResult UpdateBeverages()
+        public async Task<IActionResult> UpdateBeverages()
         {
 
-            MakeRequest();
+            TempData["BeveragesRequestSuccess"] = await MakeRequestBeverages();
 
-            return View();
+            return RedirectToAction("Index");
         }
 
 
         /// <summary>
         /// Updates the database with the new data from "Systembolaget API"
         /// </summary>
-        private async void MakeRequest()
+        public async Task<bool> MakeRequestBeverages()
         {
             var client = new HttpClient();
             var queryString = HttpUtility.ParseQueryString(string.Empty);
@@ -47,15 +47,26 @@ namespace SwedishBeerConnoisseur.Controllers
 
             var uri = "https://api-extern.systembolaget.se/product/v1/product?" + queryString;
 
-            var response = await client.GetAsync(uri);
-
-            var result = JsonConvert.DeserializeObject<List<Beverage>>(await response.Content.ReadAsStringAsync());
-
-            foreach (var beverage in result)
+            try
             {
-                bool resultOfOperation = beerData.AddBeverageToDatabase(beverage);
+                var response = await client.GetAsync(uri);
+
+                var result = JsonConvert.DeserializeObject<List<Beverage>>(await response.Content.ReadAsStringAsync());
+
+                foreach (var beverage in result)
+                {
+                    if (beverage.Category == "Öl")
+                    {
+                        bool resultOfOperation = await beerData.AddBeverageToDatabase(beverage);
+                    }
+                }
+            }
+            catch
+            {
+                return false;
             }
 
+            return true;
         }
     }
 }

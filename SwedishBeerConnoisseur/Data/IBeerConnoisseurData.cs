@@ -8,6 +8,7 @@ namespace SwedishBeerConnoisseur.Data
 {
     public interface IBeerConnoisseurData
     {
-        public bool AddBeverageToDatabase(Beverage beverage);
+        public Task<bool> AddBeverageToDatabase(Beverage beverage);
+        public List<Beverage> RetrieveBeveragesList();
     }
 }
