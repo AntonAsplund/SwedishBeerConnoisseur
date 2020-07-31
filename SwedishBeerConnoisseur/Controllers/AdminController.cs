@@ -35,7 +35,7 @@ namespace SwedishBeerConnoisseur.Controllers
 
 
         /// <summary>
-        /// Updates the database with the new data from "Systembolaget API"
+        /// Updates the database with the new data from "https://api-extern.systembolaget.se"
         /// </summary>
         public async Task<bool> MakeRequestBeverages()
         {
