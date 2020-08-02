@@ -10,6 +10,6 @@ namespace SwedishBeerConnoisseur.Data
     {
         public Task<bool> AddBeverageToDatabase(Beverage beverage);
         public List<Beverage> RetrieveBeveragesList();
-        List<Store> FindStoresByCity(string city);
+        public Task<List<Store>> FindStoresByCity(string city);
     }
 }

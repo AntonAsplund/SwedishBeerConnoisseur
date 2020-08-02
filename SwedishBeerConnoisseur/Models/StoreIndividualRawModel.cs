@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 
 namespace SwedishBeerConnoisseur.Models
 {
+
     /// <summary>
-    /// Holds the information about a location and is the model for the SQL server Store entity
+    /// Model to receive the result of a store entity from "systembolaget" API.
     /// </summary>
-    public class Store
+    public class StoreIndividualRawModel
     {
-        //Internal Id reference
         public int StoreId { get; set; }
         public string SiteId { get; set; }
         public string Alias { get; set; }
@@ -27,7 +27,6 @@ namespace SwedishBeerConnoisseur.Models
         public string Email { get; set; }
         public string Depot { get; set; }
         public string Name { get; set; }
-        public string Lat { get; set; }
-        public string Long { get; set; }
+        public StoreCoordinatesModel Position { get; set; }
     }
 }

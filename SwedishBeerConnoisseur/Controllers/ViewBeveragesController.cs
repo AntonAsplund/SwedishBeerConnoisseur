@@ -28,9 +28,9 @@ namespace SwedishBeerConnoisseur.Controllers
         }
 
         [HttpPost]
-        public IActionResult FindStores(string city)
+        public async Task<IActionResult> FindStores(string city)
         {
-            List<Store> stores = beerData.FindStoresByCity(city);
+            List<Store> stores = await beerData.FindStoresByCity(city);
 
             if (stores == null)
             {

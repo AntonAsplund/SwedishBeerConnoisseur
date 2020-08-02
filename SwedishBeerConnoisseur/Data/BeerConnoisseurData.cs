@@ -45,11 +45,21 @@ namespace SwedishBeerConnoisseur.Data
 
         }
 
+
+        /// <summary>
+        /// Retrieves a list of all beverages in database
+        /// </summary>
+        /// <returns></returns>
         public List<Beverage> RetrieveBeveragesList()
         {
             return dbContext.Beverages.ToList<Beverage>();
         }
 
+        /// <summary>
+        /// Finds all stores by given querystring
+        /// </summary>
+        /// <param name="city"></param>
+        /// <returns></returns>
         public async Task<List<Store>> FindStoresByCity(string city)
         {
 
@@ -67,7 +77,7 @@ namespace SwedishBeerConnoisseur.Data
 
                 var result = JsonConvert.DeserializeObject<List<Store>>(await response.Content.ReadAsStringAsync());
 
-                foreach (var beverage in result)
+                foreach (var store in result)
                 {
                     
                 }
