@@ -30,22 +30,40 @@ namespace SwedishBeerConnoisseur.Controllers
         [HttpPost]
         public async Task<IActionResult> FindStores(string city)
         {
-            List<Store> stores = await beerData.FindStoresByCity(city);
+            List<Store> possibleStores = await beerData.FindStoresAndAgentsByCity(city);
+            List<Store> stores = new List<Store>();
 
-            if (stores == null)
+            if (possibleStores != null)
             {
-                return View(city);
+                for (int i = 0; i < possibleStores.Count; i++)
+                {
+                    if (possibleStores[i].IsStore)
+                    {
+                        stores.Add(possibleStores[i]);
+                    }
+                }
+
+                if (stores != null)
+                {
+                    return RedirectToAction("RetrieveFromLocation", stores);
+                }
             }
 
-            return RedirectToAction("RetrieveFromLocation", stores);
+            TempData["citySearch"] = "No city was found at that location";
+            return View(city);
         }
 
-        public IActionResult RetrieveFromLocation(Store store)
+        public IActionResult RetrieveFromLocation(List<Store> stores)
+        {
+            return View(stores);
+        }
+
+        public IActionResult RetrieveBeersFromLocation(Store store)
         {
 
-            List<Beverage> beverages = beerData.RetrieveBeveragesList();
 
             return View();
         }
+
     }
 }

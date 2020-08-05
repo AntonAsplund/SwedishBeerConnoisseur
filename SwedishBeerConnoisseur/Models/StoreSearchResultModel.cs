@@ -8,7 +8,7 @@ namespace SwedishBeerConnoisseur.Models
     /// <summary>
     /// Model to receive the result of a users serach for a stores by a given string query
     /// </summary>
-    public class StoreSearchResultModelcs
+    public class StoreSearchResultModel
     {
         public List<StoreIndividualRawModel> Hits { get; set; }
     }

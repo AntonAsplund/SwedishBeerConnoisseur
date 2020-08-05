@@ -27,7 +27,7 @@ namespace SwedishBeerConnoisseur.Models
         public string Email { get; set; }
         public string Depot { get; set; }
         public string Name { get; set; }
-        public string Lat { get; set; }
-        public string Long { get; set; }
+        public decimal Lat { get; set; }
+        public decimal Long { get; set; }
     }
 }

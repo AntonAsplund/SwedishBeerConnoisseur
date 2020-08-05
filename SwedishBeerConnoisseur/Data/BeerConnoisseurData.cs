@@ -16,6 +16,12 @@ namespace SwedishBeerConnoisseur.Data
         {
             dbContext = beerConnoisseurDbContext;
         }
+
+        /// <summary>
+        /// Adds a beverage to the database and checks if the new price is lower than the old price.
+        /// </summary>
+        /// <param name="beverage"></param>
+        /// <returns></returns>
         public async Task<bool> AddBeverageToDatabase(Beverage beverage)
         {
             Beverage beverageInDatabase = dbContext.Beverages.Where(bev => bev.ProductNumber == beverage.ProductNumber).FirstOrDefault<Beverage>();
@@ -56,39 +62,94 @@ namespace SwedishBeerConnoisseur.Data
         }
 
         /// <summary>
-        /// Finds all stores by given querystring
+        /// Finds all stores and agents by given querystring in the database
         /// </summary>
         /// <param name="city"></param>
         /// <returns></returns>
-        public async Task<List<Store>> FindStoresByCity(string city)
+        public async Task<List<Store>> FindStoresAndAgentsByCity(string city)
         {
 
+            try
+            {
+                List<Store> foundStores = dbContext.Stores.Where(s => s.City.ToLower() == city.ToLower()).ToList<Store>();
+                if (foundStores != null)
+                {
+                    return foundStores;
+                }
+            }
+            catch
+            { }
+
+            return null;
+
+        }
+
+        public async Task<bool> AddStoresToDatabase()
+        {
             var client = new HttpClient();
-            var queryString = city;
+            var queryString = HttpUtility.ParseQueryString(string.Empty);
 
             // Request headers
-            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "cba4b139e74b49cf9aae18c4d7761311");
-
-            var uri = "https://api-extern.systembolaget.se/site/v1/site/search?" + queryString;
+            var uri = "https://api-extern.systembolaget.se/site/v1/site?" + queryString;
+            
 
             try
             {
                 var response = await client.GetAsync(uri);
 
-                var result = JsonConvert.DeserializeObject<List<Store>>(await response.Content.ReadAsStringAsync());
+                var result = JsonConvert.DeserializeObject<StoreSearchResultModel>(await response.Content.ReadAsStringAsync());
 
-                foreach (var store in result)
+                foreach (var store in result.Hits)
                 {
-                    
+                    Store newStore = CopyFromRawStoreToStoreEntity(store);
+                    Store storeInDatabase = dbContext.Stores.Where(S => S.SiteId == store.SiteId).FirstOrDefault<Store>();
+                    if (storeInDatabase == null)
+                    {
+                        dbContext.Stores.Add(newStore);
+                        await dbContext.SaveChangesAsync();
+                    }
                 }
             }
             catch
             {
-                return null;
+                return false;
             }
 
 
-            return 
+            return true;
         }
+
+        /// <summary>
+        /// Deep copies a StoreIndividualRawModel to Store entity
+        /// </summary>
+        /// <param name="store"></param>
+        /// <returns></returns>
+        private Store CopyFromRawStoreToStoreEntity(StoreIndividualRawModel store)
+        {
+            Store newStore = new Store();
+
+            newStore.StoreId = store.StoreId;
+            newStore.SiteId = store.SiteId;
+            newStore.Alias = store.Alias;
+            newStore.Address = store.Address;
+            newStore.DisplayName = store.DisplayName;
+            newStore.PostalCode = store.PostalCode;
+            newStore.City = store.City;
+            newStore.County = store.County;
+            newStore.Country = store.Country;
+            newStore.IsStore = store.IsStore;
+            newStore.IsAgent = store.IsAgent;
+            newStore.IsActiveForAgentOrder = store.IsActiveForAgentOrder;
+            newStore.Phone = store.Phone;
+            newStore.Email = store.Email;
+            newStore.Depot = store.Depot;
+            newStore.Name = store.Name;
+            newStore.Lat = store.Position.Lat;
+            newStore.Long = store.Position.Long;
+
+            return newStore;
+        }
+
+        
     }
 }
