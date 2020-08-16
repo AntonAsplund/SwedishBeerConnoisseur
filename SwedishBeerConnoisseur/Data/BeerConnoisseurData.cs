@@ -56,7 +56,7 @@ namespace SwedishBeerConnoisseur.Data
         /// Retrieves a list of all beverages in database
         /// </summary>
         /// <returns></returns>
-        public List<Beverage> RetrieveBeveragesList()
+        public async Task<List<Beverage>> RetrieveBeveragesList()
         {
             return dbContext.Beverages.ToList<Beverage>();
         }
@@ -89,6 +89,8 @@ namespace SwedishBeerConnoisseur.Data
             var client = new HttpClient();
             var queryString = HttpUtility.ParseQueryString(string.Empty);
 
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "cba4b139e74b49cf9aae18c4d7761311");
+
             // Request headers
             var uri = "https://api-extern.systembolaget.se/site/v1/site?" + queryString;
             
@@ -102,10 +104,26 @@ namespace SwedishBeerConnoisseur.Data
                 foreach (var store in result.Hits)
                 {
                     Store newStore = CopyFromRawStoreToStoreEntity(store);
-                    Store storeInDatabase = dbContext.Stores.Where(S => S.SiteId == store.SiteId).FirstOrDefault<Store>();
+                    Store storeInDatabase = dbContext.Stores.Where(S => S.SiteId == newStore.SiteId).FirstOrDefault<Store>();
                     if (storeInDatabase == null)
                     {
                         dbContext.Stores.Add(newStore);
+                        await dbContext.SaveChangesAsync();
+                        storeInDatabase = dbContext.Stores.Where(S => S.SiteId == newStore.SiteId).FirstOrDefault<Store>();
+                    }
+
+                    storeInDatabase.Beverages.Clear();
+
+                    List<string> allBeveragesInStore = await FindAllBeveragesInStore(storeInDatabase.SiteId);
+
+                    if (allBeveragesInStore != null)
+                    {
+                        foreach (var beverage in allBeveragesInStore)
+                        {
+                            Beverage newBeverage = dbContext.Beverages.Where(b => b.ProductId == beverage).FirstOrDefault<Beverage>();
+                            storeInDatabase.Beverages.Add(newBeverage);
+                        }
+
                         await dbContext.SaveChangesAsync();
                     }
                 }
@@ -118,6 +136,44 @@ namespace SwedishBeerConnoisseur.Data
 
             return true;
         }
+        //Finds all beverages in a given store by siteId  which are categorized as beers
+        private async Task<List<string>> FindAllBeveragesInStore(string siteId)
+        {
+            var client = new HttpClient();
+
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "cba4b139e74b49cf9aae18c4d7761311");
+
+            // Request headers
+            var uri = "https://api-extern.systembolaget.se/product/v1/product/getproductswithstore?SiteId=" + siteId;
+
+            List<string> beveragesInStore = new List<string>();
+
+            try
+            {
+                var response = await client.GetAsync(uri);
+
+                var result = JsonConvert.DeserializeObject<List<StoreBeverageSearchResult>>(await response.Content.ReadAsStringAsync());
+
+                foreach (var beverage in result[0].Products)
+                {
+                    //Makes sure no beverages other than beer gets added to the system
+                    if (beverage.Category == "Öl")
+                    {
+                        beveragesInStore.Add(beverage.ProductId);
+                    }
+                }
+            }
+
+            catch
+            {
+                return null;
+            }
+
+            return beveragesInStore;
+        }
+
+
+
 
         /// <summary>
         /// Deep copies a StoreIndividualRawModel to Store entity

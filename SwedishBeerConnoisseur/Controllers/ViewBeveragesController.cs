@@ -17,10 +17,43 @@ namespace SwedishBeerConnoisseur.Controllers
             this.beerData = beerData;
         }
 
+
         public IActionResult Beverages()
         {
-            return View(beerData.RetrieveBeveragesList());
+            return View();
         }
+        /// <summary>
+        /// Retrieves a list of beverages by the critera that a user has choosen
+        /// </summary>
+        /// <param name="storeCitySearchString"></param>
+        /// <param name=""></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<IActionResult> Beverages(string storeCitySearchString, )
+        {
+
+            List<Store> stores = await beerData.FindStoresAndAgentsByCity(storeCitySearchString);
+            List<Beverage> beverages = new List<Beverage>();
+
+            if (stores == null)
+            {
+                beverages = await beerData.RetrieveBeveragesList();
+            }
+            else
+            {
+                //Goes through all the stores in specified town to retrieve the list
+                for (int i = 0; i < stores.Count; i++)
+                { 
+                stores[i].
+                }
+            }
+
+            return View(beverageSearchViewModel);
+
+            return View();
+        }
+
+
 
         public IActionResult FindStores()
         {
@@ -60,8 +93,6 @@ namespace SwedishBeerConnoisseur.Controllers
 
         public IActionResult RetrieveBeersFromLocation(Store store)
         {
-
-
             return View();
         }
 

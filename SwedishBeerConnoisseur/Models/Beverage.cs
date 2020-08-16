@@ -7,6 +7,10 @@ namespace SwedishBeerConnoisseur.Models
 {
     public class Beverage
     {
+        public Beverage()
+        {
+            Stores = new List<Store>();
+        }
         //Internal Id reference
         public int BeverageId { get; set; }
         public string ProductId { get; set; }
@@ -47,10 +51,13 @@ namespace SwedishBeerConnoisseur.Models
         public decimal RecycleFee { get; set; }
         public decimal Rating { get; set; }
         public int NumberOfRatings { get; set; }
-        //Rate beer rating
+        //Ratebeer rating
         public decimal RateBRating { get; set; }
+        //UnTappd rating
+        public decimal RateURating { get; set; }
         public int NumberOfRateBRatings { get; set; }
         public bool IsNews { get; set; }
+        public virtual ICollection<Store> Stores { get; set; }
 
     }
 }

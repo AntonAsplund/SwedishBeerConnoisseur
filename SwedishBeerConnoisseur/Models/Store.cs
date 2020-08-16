@@ -10,6 +10,10 @@ namespace SwedishBeerConnoisseur.Models
     /// </summary>
     public class Store
     {
+        public Store()
+        {
+            Beverages = new List<Beverage>();
+        }
         //Internal Id reference
         public int StoreId { get; set; }
         public string SiteId { get; set; }
@@ -29,5 +33,6 @@ namespace SwedishBeerConnoisseur.Models
         public string Name { get; set; }
         public decimal Lat { get; set; }
         public decimal Long { get; set; }
+        public virtual ICollection<Beverage> Beverages { get; set; }
     }
 }

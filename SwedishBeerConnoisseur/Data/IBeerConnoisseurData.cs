@@ -9,7 +9,7 @@ namespace SwedishBeerConnoisseur.Data
     public interface IBeerConnoisseurData
     {
         public Task<bool> AddBeverageToDatabase(Beverage beverage);
-        public List<Beverage> RetrieveBeveragesList();
+        public Task<List<Beverage>> RetrieveBeveragesList();
         public Task<List<Store>> FindStoresAndAgentsByCity(string city);
     }
 }
