@@ -33,6 +33,7 @@ namespace SwedishBeerConnoisseur.Controllers
             return RedirectToAction("Index");
         }
 
+        #region MoveToBeerConnoisseurData
 
         /// <summary>
         /// Updates the database with the new data from "https://api-extern.systembolaget.se"
@@ -68,5 +69,15 @@ namespace SwedishBeerConnoisseur.Controllers
 
             return true;
         }
+
+        #endregion
+
+        public async Task<IActionResult> UpdateStores()
+        {
+            await beerData.AddStoresToDatabase();
+
+            return RedirectToAction("Index");
+        }
+
     }
 }

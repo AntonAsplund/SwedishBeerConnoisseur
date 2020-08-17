@@ -48,9 +48,8 @@ namespace SwedishBeerConnoisseur.Controllers
 
 
 
-            return View(new BeverageSearchViewModel { Beverages = beverages, Store = stores});
+            return View(new BeverageSearchViewModel { Beverages = beverages});
 
-            return View();
         }
 
 
