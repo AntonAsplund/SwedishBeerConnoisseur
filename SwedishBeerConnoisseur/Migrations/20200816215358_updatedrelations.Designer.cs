@@ -2,15 +2,17 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SwedishBeerConnoisseur.Data;
 
 namespace SwedishBeerConnoisseur.Migrations
 {
     [DbContext(typeof(BeerConnoisseurDbContext))]
-    partial class BeerConnoisseurDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200816215358_updatedrelations")]
+    partial class updatedrelations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

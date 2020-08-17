@@ -84,6 +84,10 @@ namespace SwedishBeerConnoisseur.Data
 
         }
 
+        /// <summary>
+        /// Adds stores to the database and connects which beverages the store stocks
+        /// </summary>
+        /// <returns></returns>
         public async Task<bool> AddStoresToDatabase()
         {
             var client = new HttpClient();
@@ -112,8 +116,13 @@ namespace SwedishBeerConnoisseur.Data
                         storeInDatabase = dbContext.Stores.Where(S => S.SiteId == newStore.SiteId).FirstOrDefault<Store>();
                     }
 
-                    storeInDatabase.Beverages.Clear();
+                    //Removes all connections between beverages and store. Renewing the stock of the store.
+                    var beveragesInStore = dbContext.BeveragesInStore.Where(B => B.StoreId == storeInDatabase.StoreId).ToList();
+                    dbContext.BeveragesInStore.RemoveRange(beveragesInStore);
+                    await dbContext.SaveChangesAsync();
 
+
+                    //Updates the stocks of the stores and adds it to the table "BeveragesInStore"
                     List<string> allBeveragesInStore = await FindAllBeveragesInStore(storeInDatabase.SiteId);
 
                     if (allBeveragesInStore != null)
@@ -121,7 +130,9 @@ namespace SwedishBeerConnoisseur.Data
                         foreach (var beverage in allBeveragesInStore)
                         {
                             Beverage newBeverage = dbContext.Beverages.Where(b => b.ProductId == beverage).FirstOrDefault<Beverage>();
-                            storeInDatabase.Beverages.Add(newBeverage);
+
+                            dbContext.BeveragesInStore.Add(new BeveragesInStore { Beverage = newBeverage, Store = storeInDatabase });
+                            await dbContext.SaveChangesAsync();
                         }
 
                         await dbContext.SaveChangesAsync();
@@ -205,7 +216,42 @@ namespace SwedishBeerConnoisseur.Data
 
             return newStore;
         }
+        /// <summary>
+        /// Takes a List of stores and returns a list of beverages which said stores stock
+        /// </summary>
+        /// <param name="storeId"></param>
+        /// <returns></returns>
+        public List<Beverage> RetrieveBeveragesInStores(List<Store> stores)
+        {
+            List<BeveragesInStore> beveragesInStore = new List<BeveragesInStore>();
 
-        
+
+            //Adds the stocked beverages in a list of stores to a list of beveragesInStore and skips any duplicates
+            foreach (var store in stores)
+            {
+
+                List<BeveragesInStore> temporaryListOfBeveragesFromOneStore = dbContext.BeveragesInStore.Where(B => B.StoreId == store.StoreId).ToList();
+
+                foreach (var beverage in temporaryListOfBeveragesFromOneStore)
+                {
+                    if (beveragesInStore.Contains(beverage) == false)
+                    {
+                        beveragesInStore.Add(beverage);
+                    }
+                }
+
+            }
+
+            //Converts list of BeveragesInStore entitys to a list of beverage entitys
+
+            List<Beverage> beverages = new List<Beverage>();
+
+            foreach (var beverage in beveragesInStore)
+            {
+                beverages.Add(dbContext.Beverages.Where(B => B.BeverageId == beverage.BeverageId).FirstOrDefault());
+            }
+
+            return beverages;
+        }
     }
 }

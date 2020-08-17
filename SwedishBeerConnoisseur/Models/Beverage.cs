@@ -9,7 +9,7 @@ namespace SwedishBeerConnoisseur.Models
     {
         public Beverage()
         {
-            Stores = new List<Store>();
+            BeveragesInStore = new List<BeveragesInStore>();
         }
         //Internal Id reference
         public int BeverageId { get; set; }
@@ -57,7 +57,7 @@ namespace SwedishBeerConnoisseur.Models
         public decimal RateURating { get; set; }
         public int NumberOfRateBRatings { get; set; }
         public bool IsNews { get; set; }
-        public virtual ICollection<Store> Stores { get; set; }
+        public virtual ICollection<BeveragesInStore> BeveragesInStore { get; set; }
 
     }
 }

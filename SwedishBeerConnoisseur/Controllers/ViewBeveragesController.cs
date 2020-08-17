@@ -29,7 +29,7 @@ namespace SwedishBeerConnoisseur.Controllers
         /// <param name=""></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<IActionResult> Beverages(string storeCitySearchString, )
+        public async Task<IActionResult> Beverages(string storeCitySearchString )
         {
 
             List<Store> stores = await beerData.FindStoresAndAgentsByCity(storeCitySearchString);
@@ -37,18 +37,18 @@ namespace SwedishBeerConnoisseur.Controllers
 
             if (stores == null)
             {
+                //If no store is selected then it shows all beverages in the list
                 beverages = await beerData.RetrieveBeveragesList();
             }
             else
             {
                 //Goes through all the stores in specified town to retrieve the list
-                for (int i = 0; i < stores.Count; i++)
-                { 
-                stores[i].
-                }
+                beverages.AddRange(beerData.RetrieveBeveragesInStores(stores));
             }
 
-            return View(beverageSearchViewModel);
+
+
+            return View(new BeverageSearchViewModel { Beverages = beverages, Store = stores});
 
             return View();
         }
