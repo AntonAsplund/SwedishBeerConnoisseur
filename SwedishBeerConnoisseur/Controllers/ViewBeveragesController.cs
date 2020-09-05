@@ -18,10 +18,11 @@ namespace SwedishBeerConnoisseur.Controllers
         }
 
 
-        public IActionResult Beverages()
+        public async Task<IActionResult> Beverages()
         {
-            return View();
+            return View(await beerData.RetrieveBeveragesList());
         }
+
         /// <summary>
         /// Retrieves a list of beverages by the critera that a user has choosen
         /// </summary>

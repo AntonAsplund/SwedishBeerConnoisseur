@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using SwedishBeerConnoisseur.Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,13 +19,49 @@ namespace SwedishBeerConnoisseur.Data
         }
 
         /// <summary>
+        /// Updates the database with the new data from "https://api-extern.systembolaget.se"
+        /// </summary>
+        /// <returns></returns>
+        public async Task<bool> MakeBeveragesRequest()
+        {
+            var client = new HttpClient();
+            var queryString = HttpUtility.ParseQueryString(string.Empty);
+
+            // Request headers
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "cba4b139e74b49cf9aae18c4d7761311");
+
+            var uri = "https://api-extern.systembolaget.se/product/v1/product?" + queryString;
+
+            try
+            {
+                var response = await client.GetAsync(uri);
+
+                var result = JsonConvert.DeserializeObject<List<Beverage>>(await response.Content.ReadAsStringAsync());
+
+                foreach (var beverage in result)
+                {
+                    if (beverage.Category == "Öl")
+                    {
+                        bool resultOfOperation = await AddBeverageToDatabase(beverage);
+                    }
+                }
+            }
+            catch
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Adds a beverage to the database and checks if the new price is lower than the old price.
         /// </summary>
         /// <param name="beverage"></param>
         /// <returns></returns>
         public async Task<bool> AddBeverageToDatabase(Beverage beverage)
         {
-            Beverage beverageInDatabase = dbContext.Beverages.Where(bev => bev.ProductNumber == beverage.ProductNumber).FirstOrDefault<Beverage>();
+            Beverage beverageInDatabase = await dbContext.Beverages.Where(bev => bev.ProductNumber == beverage.ProductNumber).FirstOrDefaultAsync();
             if (beverageInDatabase == null)
             {
                 dbContext.Beverages.Add(beverage);
@@ -58,7 +95,7 @@ namespace SwedishBeerConnoisseur.Data
         /// <returns></returns>
         public async Task<List<Beverage>> RetrieveBeveragesList()
         {
-            return dbContext.Beverages.ToList<Beverage>();
+            return await dbContext.Beverages.ToListAsync();
         }
 
         /// <summary>
@@ -71,7 +108,7 @@ namespace SwedishBeerConnoisseur.Data
 
             try
             {
-                List<Store> foundStores = dbContext.Stores.Where(s => s.City.ToLower() == city.ToLower()).ToList<Store>();
+                List<Store> foundStores = await dbContext.Stores.Where(s => s.City.ToLower() == city.ToLower()).ToListAsync<Store>();
                 if (foundStores != null)
                 {
                     return foundStores;
@@ -96,51 +133,27 @@ namespace SwedishBeerConnoisseur.Data
             client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "cba4b139e74b49cf9aae18c4d7761311");
 
             // Request headers
-            var uri = "https://api-extern.systembolaget.se/site/v1/site/search" + queryString;
+            var uri = "https://api-extern.systembolaget.se/site/v1/site" + queryString;
             
                 
             try
             {
                 var response = await client.GetAsync(uri);
 
-                var result = JsonConvert.DeserializeObject<StoreSearchResultModel>(await response.Content.ReadAsStringAsync());
+                var result = JsonConvert.DeserializeObject<List<StoreIndividualRawModel>>(await response.Content.ReadAsStringAsync());
 
-                foreach (var store in result.Hits)
+                foreach (var store in result)
                 {
                     if (store.IsStore)
                     {
                         Store newStore = CopyFromRawStoreToStoreEntity(store);
-                        Store storeInDatabase = dbContext.Stores.Where(S => S.SiteId == newStore.SiteId).FirstOrDefault<Store>();
+                        Store storeInDatabase = await dbContext.Stores.Where(S => S.SiteId == newStore.SiteId).FirstOrDefaultAsync();
                         if (storeInDatabase == null)
                         {
                             dbContext.Stores.Add(newStore);
                             await dbContext.SaveChangesAsync();
-                            storeInDatabase = dbContext.Stores.Where(S => S.SiteId == newStore.SiteId).FirstOrDefault<Store>();
                         }
 
-                        //Removes all connections between beverages and store. Renewing the stock of the store.
-                        var beveragesInStore = dbContext.BeveragesInStore.Where(B => B.StoreId == storeInDatabase.StoreId).ToList();
-                        dbContext.BeveragesInStore.RemoveRange(beveragesInStore);
-                        await dbContext.SaveChangesAsync();
-
-
-                        //Updates the stocks of the stores and adds it to the table "BeveragesInStore"
-                        List<string> allBeveragesInStore = await FindAllBeveragesInStore(storeInDatabase.SiteId);
-
-                        if (allBeveragesInStore != null)
-                        {
-                            foreach (var beverage in allBeveragesInStore)
-                            {
-                                Beverage newBeverage = dbContext.Beverages.Where(b => b.ProductId == beverage).FirstOrDefault<Beverage>();
-
-                                if (newBeverage != null)
-                                {
-                                    dbContext.BeveragesInStore.Add(new BeveragesInStore { Beverage = newBeverage, Store = storeInDatabase });
-                                    await dbContext.SaveChangesAsync();
-                                }
-                            }
-
-                        }
                     }
                 }
             }
@@ -152,10 +165,50 @@ namespace SwedishBeerConnoisseur.Data
 
             return true;
         }
+
+        public async Task<bool> UpdateStoresAndStocks()
+        {
+
+            var storesInDatabase = await dbContext.Stores.ToListAsync();
+
+
+            foreach (var store in storesInDatabase)
+            {
+                //Removes all old connections between beverages and store. Renewing the stock of the store.
+                var beveragesInStore = await dbContext.BeveragesInStore.Where(B => B.StoreId == store.StoreId).ToListAsync();
+                dbContext.BeveragesInStore.RemoveRange(beveragesInStore);
+                await dbContext.SaveChangesAsync();
+                
+
+                //Updates the stocks of the stores and adds it to the table "BeveragesInStore"
+                List<string> allBeveragesInStore = await FindAllBeveragesInStore(store.SiteId);
+
+                if (allBeveragesInStore != null)
+                {
+                    foreach (var beverage in allBeveragesInStore)
+                    {
+                        //Retrieves the beverage from the database and makes sure the connection between a store and beverage is made
+                        Beverage newBeverage = await dbContext.Beverages.Where(b => b.ProductId == beverage).FirstOrDefaultAsync<Beverage>();
+
+                        if (newBeverage != null)
+                        {
+                            dbContext.BeveragesInStore.Add(new BeveragesInStore { Beverage = newBeverage, Store = store });
+                            await dbContext.SaveChangesAsync();
+                        }
+                    }
+
+                }
+            }
+
+            return true;
+
+        }
+
         //Finds all beverages in a given store by siteId  which are categorized as beers
         private async Task<List<string>> FindAllBeveragesInStore(string siteId)
         {
             var client = new HttpClient();
+            bool beveragesNotFound = true;
 
             client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "cba4b139e74b49cf9aae18c4d7761311");
 
@@ -164,31 +217,33 @@ namespace SwedishBeerConnoisseur.Data
 
             List<string> beveragesInStore = new List<string>();
 
-            try
+            while (beveragesNotFound)
             {
-                var response = await client.GetAsync(uri);
-
-                var result = JsonConvert.DeserializeObject<List<StoreBeverageSearchResult>>(await response.Content.ReadAsStringAsync());
-
-                StoreBeverageSearchResult storeBeverageSearchResult = new StoreBeverageSearchResult();
-
-                foreach (var store in result)
+                try
                 {
-                    if (store.SiteId == siteId)
+                    var response = await client.GetAsync(uri);
+
+                    var result = JsonConvert.DeserializeObject<List<StoreBeverageSearchResult>>(await response.Content.ReadAsStringAsync());
+
+                    StoreBeverageSearchResult storeBeverageSearchResult = result.Where(S => S.SiteId == siteId).FirstOrDefault();
+
+                    //Handles the event of a store not being present in the JSON response from the server
+                    if (storeBeverageSearchResult == null)
                     {
-                        storeBeverageSearchResult = store;
+                        return null;
                     }
-                }
 
-                foreach (var beverage in storeBeverageSearchResult.Products)
+                    foreach (var beverage in storeBeverageSearchResult.Products)
+                    {
+                        beveragesInStore.Add(beverage.ProductId);
+                    }
+
+                    beveragesNotFound = false;
+                }
+                catch
                 {
-                    beveragesInStore.Add(beverage.ProductId);
+                    //Catches HTTP Exceptions
                 }
-            }
-
-            catch
-            {
-                return null;
             }
 
             return beveragesInStore;
@@ -264,5 +319,7 @@ namespace SwedishBeerConnoisseur.Data
 
             return beverages;
         }
+
+        
     }
 }
